@@ -6,6 +6,11 @@ import time
 def compute_pcl_estimate(data_file,inv_noise_file,beam_file):
   d = hp.read_map(data_file)
   inv_n = hp.read_map(inv_noise_file)
+  print "zero pixels= ",len(inv_n[inv_n<=0])
+  if len(inv_n[inv_n<=0]) > 0:
+    inv_n[inv_n<=0] = min(inv_n[inv_n>0])
+  
+  
   n  = 1./np.sqrt(inv_n)
 
   nside = hp.npix2nside(np.shape(d)[0])
@@ -61,6 +66,11 @@ if __name__ == "__main__":
     inv_noise_file =sys.argv[2]
     beam_file = sys.argv[3]
     output_file = sys.argv[4]
+    
+    print "data :",data_file
+    print "N^-1 :",inv_noise_file
+    print "beam :",beam_file
+    print "output :",output_file
 
     C_l,N_l,S_l = compute_pcl_estimate(data_file,inv_noise_file,beam_file)
     write_pcl(output_file,C_l,N_l,S_l)
