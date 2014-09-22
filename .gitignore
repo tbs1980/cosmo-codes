@@ -54,3 +54,12 @@ dist
 
 #custum stuff
 mock_des_cls/splinter_output/*
+
+#image files
+*.fits
+*.gif
+
+#other text files
+*.dat
+*.cl
+*.pcl
