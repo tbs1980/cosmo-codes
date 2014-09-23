@@ -20,7 +20,7 @@ def get_mask_file(inv_noise_map):
 
     return mask
 
-def compute_pcl_estimate(data_file,inv_noise_file,beam_file):
+def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     #write the data file
     d = hp.read_map(data_file)
     hp.write_map(spice_data,m=d)
@@ -60,7 +60,6 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file):
     #compute the noise power spectrum using Monte Carlo
     N_l = np.zeros(np.shape(D_l))
     mu = np.zeros(np.shape(d))
-    num_samps = int(1000)
     for samp in range(num_samps):
         if samp % 100 == 0 :
             print "samples taken =",samp
@@ -100,19 +99,20 @@ def write_pcl(output_file,C_l,N_l,S_l):
   np.savetxt(output_file,np.asarray([ell,C_l,N_l,S_l]).T,delimiter=",")
 
 if __name__ == "__main__":
-  if len(sys.argv) == 5 :
+  if len(sys.argv) == 6 :
     start_time = time.time()
 
     data_file = sys.argv[1]
     inv_noise_file =sys.argv[2]
     beam_file = sys.argv[3]
     output_file = sys.argv[4]
+    num_samps = int(sys.argv[5])
 
-    C_l,N_l,S_l = compute_pcl_estimate(data_file,inv_noise_file,beam_file)
+    C_l,N_l,S_l = compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps)
     write_pcl(output_file,C_l,N_l,S_l)
 
     print ""
     print (time.time() - start_time) / 60.0, 'minutes'
   else:
-    print "usage: python ",sys.argv[0],"<data> <inv-noise-cov-mat> <beam-file> <output-cl-file>"
-    print "example: python",sys.argv[0], "./data.fits ./invNoise.fits ./window_func_temp_ns128.bl ./base.pcl "
+    print "usage: python ",sys.argv[0],"<data> <inv-noise-cov-mat> <beam-file> <output-cl-file> <n-samps>"
+    print "example: python",sys.argv[0], "./data.fits ./invNoise.fits ./window_func_temp_ns128.bl ./base.pcl 100"
