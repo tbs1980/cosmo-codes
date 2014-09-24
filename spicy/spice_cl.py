@@ -47,8 +47,9 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     #compute the powe spectrum of the data
     call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
-        spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO'])#'-beam_file',spice_bl,
-    call(['rm',spice_data])
+        spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO',
+        '-thetamax', '89', '-apodizesigma', '89'])#'-beam_file',spice_bl,
+    #call(['rm',spice_data])
 
 
     #read the power spectrum
@@ -60,17 +61,19 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     #compute the noise power spectrum using Monte Carlo
     N_l = np.zeros(np.shape(D_l))
     mu = np.zeros(np.shape(d))
+    sig= np.ones(np.shape(d))
     for samp in range(num_samps):
         if samp % 100 == 0 :
             print "samples taken =",samp
         # draw a realisation from noise
-        n_i = np.random.normal(mu,n)
+        n_i = n*np.random.normal(mu,sig)
         #write this to file
         hp.write_map(spice_noise,m=n_i)
 
         # find the power spectrum of this realisation
         call([spice_exe,'-mapfile',spice_noise,'-maskfile',spice_mask,'-clfile',
-            spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO'])
+            spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO',
+            '-thetamax', '89', '-apodizesigma', '89'])
 
         #read the power spectrum
         N_l_i = np.loadtxt(spice_nl,skiprows=1)[:,1]
@@ -90,7 +93,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     S_l = D_l - N_l
 
     #delete the mask
-    call(['rm',spice_mask])
+    #call(['rm',spice_mask])
 
     return (D_l,N_l,S_l)
 
