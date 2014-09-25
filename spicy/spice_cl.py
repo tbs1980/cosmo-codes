@@ -13,7 +13,7 @@ spice_mask='spice_mask.fits'
 spice_dl='spice_dl.dat'
 spice_nl='spice_nl.dat'
 spice_bl='spice_bl.dat'
-
+spice_crr='spice_crr.dat'
 def get_mask_file(inv_noise_map):
     mask=np.zeros(np.shape(inv_noise_map))
     mask[inv_noise_map>0]=1
@@ -29,6 +29,28 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     inv_n = hp.read_map(inv_noise_file)
     msk = get_mask_file(inv_n)
     hp.write_map(spice_mask,m=msk)
+    
+    if d.shape != inv_n.shape :
+        raise RuntimeError("data and noise have different dimensions")
+
+    nside=hp.npix2nside(np.shape(d)[0])
+
+    
+    #compute the power spectrum of the mask
+    call([spice_exe,'-mapfile',spice_mask,'-corfile',spice_crr])
+    
+    
+    #load the crr file
+    W_t_in = np.loadtxt(spice_crr,skiprows=1)
+    theta = W_t_in[:,0]
+    W_t = W_t_in[:,2]
+    ap_sigma = np.max(theta[np.log10(np.abs(W_t))>-3.5])*180./np.pi
+    
+    
+    if ap_sigma <= 0.:
+        raise RuntimeError("ap_sigma should be >0")
+    
+    print "ap sigma = ",ap_sigma
 
     #write the noise map
     n = np.zeros(np.shape(inv_n))
@@ -40,15 +62,10 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     B_l = B_l_in[:,1]
 
 
-    if d.shape != inv_n.shape :
-        raise RuntimeError("data and noise have different dimensions")
-
-    nside=hp.npix2nside(np.shape(d)[0])
-
     #compute the powe spectrum of the data
     call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
         spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO',
-        '-thetamax', '89', '-apodizesigma', '89'])#'-beam_file',spice_bl,
+        '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])#'-beam_file',spice_bl,
     #call(['rm',spice_data])
 
 
@@ -73,7 +90,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
         # find the power spectrum of this realisation
         call([spice_exe,'-mapfile',spice_noise,'-maskfile',spice_mask,'-clfile',
             spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO',
-            '-thetamax', '89', '-apodizesigma', '89'])
+            '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
 
         #read the power spectrum
         N_l_i = np.loadtxt(spice_nl,skiprows=1)[:,1]
