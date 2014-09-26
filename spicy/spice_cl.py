@@ -29,27 +29,27 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     inv_n = hp.read_map(inv_noise_file)
     msk = get_mask_file(inv_n)
     hp.write_map(spice_mask,m=msk)
-    
+
     if d.shape != inv_n.shape :
         raise RuntimeError("data and noise have different dimensions")
 
     nside=hp.npix2nside(np.shape(d)[0])
 
-    
+
     #compute the power spectrum of the mask
     call([spice_exe,'-mapfile',spice_mask,'-corfile',spice_crr])
-    
-    
+
+
     #load the crr file
     W_t_in = np.loadtxt(spice_crr,skiprows=1)
     theta = W_t_in[:,0]
     W_t = W_t_in[:,2]
     ap_sigma = np.max(theta[np.log10(np.abs(W_t))>-3.5])*180./np.pi
-    
-    
+
+
     if ap_sigma <= 0.:
         raise RuntimeError("ap_sigma should be >0")
-    
+
     print "ap sigma = ",ap_sigma
 
     #write the noise map
@@ -58,14 +58,14 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     #write the beam file
     B_l_in = np.loadtxt(beam_file,delimiter=",")
-    #np.savetxt(spice_bl,B_l_in,fmt="%.4f")
+    np.savetxt(spice_bl,np.asarray([B_l_in[:,0],B_l_in[:,1]]).T,fmt='%d   %0.2f')
     B_l = B_l_in[:,1]
 
 
     #compute the powe spectrum of the data
     call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
-        spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO',
-        '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])#'-beam_file',spice_bl,
+        spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl,
+        '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])#
     #call(['rm',spice_data])
 
 
@@ -73,7 +73,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     D_l = np.loadtxt(spice_dl,skiprows=1)[:,1]
 
     #apply beam to the cls
-    D_l /= B_l**2
+    #D_l /= B_l**2
 
     #compute the noise power spectrum using Monte Carlo
     N_l = np.zeros(np.shape(D_l))
@@ -89,7 +89,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
         # find the power spectrum of this realisation
         call([spice_exe,'-mapfile',spice_noise,'-maskfile',spice_mask,'-clfile',
-            spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO',
+            spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl,
             '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
 
         #read the power spectrum
@@ -104,7 +104,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     N_l /= float(num_samps)
 
     #apply beam to the nls
-    N_l /= B_l**2
+    #N_l /= B_l**2
 
     # subtract
     S_l = D_l - N_l
