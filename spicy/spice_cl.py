@@ -20,7 +20,7 @@ def get_mask_file(inv_noise_map):
 
     return mask
 
-def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
+def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps,apodize=False):
     #write the data file
     d = hp.read_map(data_file)
     hp.write_map(spice_data,m=d)
@@ -44,13 +44,16 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     W_t_in = np.loadtxt(spice_crr,skiprows=1)
     theta = W_t_in[:,0]
     W_t = W_t_in[:,2]
-    ap_sigma = np.max(theta[np.log10(np.abs(W_t))>-3.5])*180./np.pi
+
+    if apodize :
+        ap_sigma = np.max(theta[np.log10(np.abs(W_t))>-3.5])*180./np.pi
 
 
-    if ap_sigma <= 0.:
-        raise RuntimeError("ap_sigma should be >0")
+        if ap_sigma <= 0.:
+            raise RuntimeError("ap_sigma should be >0")
 
-    print "ap sigma = ",ap_sigma
+        print "ap sigma = ",ap_sigma
+
 
     #write the noise map
     n = np.zeros(np.shape(inv_n))
@@ -63,10 +66,16 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
 
     #compute the powe spectrum of the data
-    call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
-        spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl,
-        '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])#
-    #call(['rm',spice_data])
+    if apodize :
+        call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
+            spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl,
+            '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
+    else:
+        call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
+            spice_dl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl])
+
+    #delete data
+    call(['rm',spice_data])
 
 
     #read the power spectrum
@@ -88,9 +97,13 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
         hp.write_map(spice_noise,m=n_i)
 
         # find the power spectrum of this realisation
-        call([spice_exe,'-mapfile',spice_noise,'-maskfile',spice_mask,'-clfile',
-            spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl,
-            '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
+        if apodize :
+            call([spice_exe,'-mapfile',spice_noise,'-maskfile',spice_mask,'-clfile',
+                spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl,
+                '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
+        else:
+            call([spice_exe,'-mapfile',spice_noise,'-maskfile',spice_mask,'-clfile',
+                spice_nl,'-corfile','NO','-nlmax',str(2*nside),'-verbosity','NO','-beam_file',spice_bl])
 
         #read the power spectrum
         N_l_i = np.loadtxt(spice_nl,skiprows=1)[:,1]
@@ -110,7 +123,11 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     S_l = D_l - N_l
 
     #delete the mask
-    #call(['rm',spice_mask])
+    call(['rm',spice_mask])
+    call(['rm',spice_bl])
+    call(['rm',spice_crr])
+    call(['rm',spice_dl])
+    call(['rm',spice_nl])
 
     return (D_l,N_l,S_l)
 
@@ -119,7 +136,7 @@ def write_pcl(output_file,C_l,N_l,S_l):
   np.savetxt(output_file,np.asarray([ell,C_l,N_l,S_l]).T,delimiter=",")
 
 if __name__ == "__main__":
-  if len(sys.argv) == 6 :
+  if len(sys.argv) == 7 :
     start_time = time.time()
 
     data_file = sys.argv[1]
@@ -127,12 +144,13 @@ if __name__ == "__main__":
     beam_file = sys.argv[3]
     output_file = sys.argv[4]
     num_samps = int(sys.argv[5])
+    apodize = ( sys.argv[6] == "True" )
 
-    C_l,N_l,S_l = compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps)
+    C_l,N_l,S_l = compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps,apodize)
     write_pcl(output_file,C_l,N_l,S_l)
 
     print ""
     print (time.time() - start_time) / 60.0, 'minutes'
   else:
-    print "usage: python ",sys.argv[0],"<data> <inv-noise-cov-mat> <beam-file> <output-cl-file> <n-samps>"
-    print "example: python",sys.argv[0], "./data.fits ./invNoise.fits ./window_func_temp_ns128.bl ./base.pcl 100"
+    print "usage: python ",sys.argv[0],"<data> <inv-noise-cov-mat> <beam-file> <output-cl-file> <n-samps> <apodize?>"
+    print "example: python",sys.argv[0], "./data.fits ./invNoise.fits ./window_func_temp_ns128.bl ./base.pcl 100 False"
