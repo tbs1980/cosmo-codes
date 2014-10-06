@@ -41,4 +41,4 @@ if __name__ == "__main__":
         make_window_func_file(hpix_data_dir,nside)
     else:
         print "usage: python ",sys.argv[0],"<healpix-data-dir> <nside>"
-        print "example: python",sys.argv[0], "/arxiv/libraries/source/Healpix_3.11 256"
+        print "example: python",sys.argv[0], "/arxiv/libraries/source/Healpix_3.11/data 256"
