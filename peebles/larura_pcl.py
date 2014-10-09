@@ -51,11 +51,11 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     #compute the powe spectrum of the data
     call([map_to_alm,'-I',spice_data,'-O',spice_data_alm,'-L',str(2*nside),'-m',spice_mask])
-    call([alm_to_cl,'-I',spice_data_alm,'-O',spice_dl,'-m',spice_mask,'-N',str(nside),'-L',str(2*nside+1)])
-    
+    call([alm_to_cl,'-I',spice_data_alm,'-O',spice_dl,'-m',spice_mask,'-M',spice_data,'-N',str(nside),'-L',str(2*nside+1)])
+
     call(['rm',spice_data_alm])
     call(['rm',spice_data])
-    
+
     #read the power spectrum
     D_l = np.loadtxt(spice_dl,skiprows=2)[:,1]
 
@@ -76,7 +76,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
         # find the power spectrum of this realisation
         call([map_to_alm,'-I',spice_noise,'-O',spice_noise_alm,'-L',str(2*nside),'-m',spice_mask])
-        call([alm_to_cl,'-I',spice_noise_alm,'-O',spice_nl,'-m',spice_mask,'-N',str(nside),'-L',str(2*nside+1)])
+        call([alm_to_cl,'-I',spice_noise_alm,'-O',spice_nl,'-m',spice_mask,'-M',spice_noise,'-N',str(nside),'-L',str(2*nside+1)])
 
         #read the power spectrum
         N_l_i = np.loadtxt(spice_nl,skiprows=2)[:,1]
@@ -103,7 +103,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     call(['rm',spice_bl])
 
     return (D_l,N_l,S_l)
- 
+
 def write_pcl(output_file,C_l,N_l,S_l):
   ell=np.arange(0,np.shape(S_l)[0])
   np.savetxt(output_file,np.asarray([ell,C_l,N_l,S_l]).T,delimiter=",")
