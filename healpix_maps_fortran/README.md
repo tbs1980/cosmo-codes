@@ -7,11 +7,11 @@ The example will write the following header to a file called `test_map.fts`.
     XTENSION= 'BINTABLE'           / binary table extension
     BITPIX  =                    8 / 8-bit bytes
     NAXIS   =                    2 / 2-dimensional binary table
-    NAXIS1  =                    0 / width of table in bytes
+    NAXIS1  =                 8192 / width of table in bytes
     NAXIS2  =                  768 / number of rows in table
     PCOUNT  =                    0 / size of special data area
     GCOUNT  =                    1 / one data group (required keyword)
-    TFIELDS =                    0 / number of fields in each row
+    TFIELDS =                    1 / number of fields in each row
     COMMENT
     COMMENT  -----------------------------------------------
     COMMENT  Sky Map Pixelisation Specific Keywords
@@ -46,6 +46,8 @@ The example will write the following header to a file called `test_map.fts`.
     POLAR   =                    F / Polarisation included (True/False)
     DERIV   =                    0 / Derivative included (0, 1 or 2)
     COMMENT
+    TTYPE1  = 'TEMPERATURE'        / Temperature map
+    TFORM1  = '1024D   '           / data format of field: 8-byte REAL
     TUNIT1  = 'unknown '           / map unit
     COMMENT
     MYCARD  = 'Test a card'

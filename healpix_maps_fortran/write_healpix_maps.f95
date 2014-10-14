@@ -2,7 +2,7 @@ program write_healpix_maps
     use healpix_types
     use pix_tools, only : nside2npix, npix2nside
     use head_fits, only : add_card, write_minimal_header
-    use fitstools, only : write_bintab
+    use fitstools, only : output_map
 
     integer(kind=i4b) nside
     integer(kind=i8b) npix
@@ -32,7 +32,8 @@ program write_healpix_maps
     nlheader = size(header)
     outfile = "!test_map.fits"
 
-    call write_bintab(map, npix, nmaps, header, nlheader,outfile)
+    ! write ouput
+    call output_map(map,header,outfile)
 
     deallocate(map)
 end program write_healpix_maps
