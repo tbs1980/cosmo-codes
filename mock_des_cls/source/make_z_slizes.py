@@ -63,7 +63,11 @@ def make_counts_maps(ra,dec,z,z_tics,mask):
         phi=degr2rad*ra[i]
 
         # find the pixel id
-        pixid=hp.ang2pix(nside,theta,phi)
+        try:
+            pixid=hp.ang2pix(nside,theta,phi)
+        except:
+            print "wrong theta and phi: theta= ",theta,"phi= ",phi,"ra= ",ra[i],"dec= ",dec[i]
+            #raise RuntimeError("wrong theta and phi")
 
         # is the pixel in the mask?
         if mask[pixid]>0 :
