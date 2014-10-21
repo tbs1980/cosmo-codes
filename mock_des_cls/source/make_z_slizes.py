@@ -71,8 +71,11 @@ def make_counts_maps(ra,dec,z,z_tics,mask):
             binid=np.searchsorted(z_tics,z[i])-1
 
             # is the bind in the range?
-            if binid >=0 and binid < len(z_tics):
-                counts[pixid,binid] += 1
+            if binid >=0 and binid < len(z_tics)-1:
+                try:
+                    counts[pixid,binid] += 1
+                except:
+                    print "index error binid= ",binid,"len(z_tics)= ",len(z_tics),"z[i]= ",z[i]
 
     # return the maps
     return counts
@@ -153,7 +156,7 @@ def main():
         print (time.time() - start_time) / 60.0, 'minutes'
     else:
         print "usage: python ",sys.argv[0],"<path-to-catalogue> <nside> <output-prefix> <redshift-tics>"
-        print "example: python",sys.argv[0], "./marc_catalogue_p00.all ./des_mock 512 0. 2."
+        print "example: python",sys.argv[0], "./marc_catalogue_p00.all 512 ./des_mock 0. 2."
 
 
 if __name__ == "__main__":
