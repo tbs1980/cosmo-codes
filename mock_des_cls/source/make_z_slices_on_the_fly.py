@@ -95,7 +95,7 @@ def slice_on_the_fly(cat_file_name,nside,z_tics):
                     print "\ninvalid parameters for the object, dicarding this one"
                     print strarr
                     print ""
-                    invalids.appned(strarr)
+                    invalids.append(strarr)
                 else:
                     pix_id,bin_id = get_bin_and_pix_ids(ra,dec,redshift,nside,z_tics)
 
