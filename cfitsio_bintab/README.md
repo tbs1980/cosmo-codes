@@ -1,6 +1,6 @@
 # Write a binary table to a fits file
 
-This program write a binary table to a fits file. To compile modify the `CFLAGS`
+This program writes a binary table to a fits file. To compile modify the `CFLAGS`
 and `LDFALGS` paths and `make`. The data we write is shown below
 
         l            C_l
