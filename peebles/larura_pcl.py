@@ -67,41 +67,12 @@ def compute_peebles_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     #compute the noise power spectrum using Monte Carlo
     N_l = np.zeros(np.shape(D_l))
-    mu = np.zeros(np.shape(d))
-    sig= np.ones(np.shape(d))
-    for samp in range(num_samps):
-        if samp % 100 == 0 :
-            print "samples taken =",samp
-        # draw a realisation from noise
-        n_i = n*np.random.normal(mu,sig)
-        #write this to file
-        hp.write_map(spice_noise,m=n_i)
-
-        # find the power spectrum of this realisation
-        call([map_to_alm,'-I',spice_noise,'-O',spice_noise_alm,'-L',str(2*nside),'-m',spice_mask])
-        call([alm_to_cl,'-I',spice_noise_alm,'-O',spice_nl,'-m',spice_mask,'-M',spice_noise,'-N',str(nside),'-L',str(2*nside+1)])
-
-        #read the power spectrum
-        N_l_i = np.loadtxt(spice_nl,skiprows=2)[:,1]
-
-        # accumulate
-        N_l += N_l_i
-
-        #delete the noise realisation
-        call(['rm',spice_noise])
-        call(['rm',spice_noise_alm])
-
-    N_l /= float(num_samps)
-
-    #apply beam to the nls
-    N_l /= B_l**2
 
     # subtract
     S_l = D_l - N_l
 
     #delete the mask
     call(['rm',spice_mask])
-    call(['rm',spice_nl])
     call(['rm',spice_dl])
     call(['rm',spice_bl])
 
