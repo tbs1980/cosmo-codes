@@ -57,8 +57,6 @@ def compute_peebles_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     call(['rm',spice_data_alm])
     call(['rm',spice_data])
 
-    return
-
     #read the power spectrum
     D_l = np.loadtxt(spice_dl,skiprows=2)[:,1]
 
