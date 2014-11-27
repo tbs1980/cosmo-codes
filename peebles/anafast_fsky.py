@@ -26,18 +26,24 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     #write the data file
     d = hp.read_map(data_file)
 
+    msk = np.ones(np.shape(d))
+
     #create a mask file from inv_noise
-    inv_n = hp.read_map(inv_noise_file)
-    msk = get_mask_file(inv_n)
+    if inv_noise_file != None :
+        #inv_n = hp.read_map(inv_noise_file)
+        msk = get_mask_file(inv_n)
 
     #compute the useful area
-    useful_pixels = len(msk[msk>0])
+    useful_pixels = np.shape(msk)[0]
 
-    fsky = useful_pixels/float(len(msk))
+    if inv_noise_file != None :
+        useful_pixels = len(msk[msk>0])
+
+    fsky = useful_pixels/float(np.shape(msk)[0])
 
     print "fsky =",fsky
 
-    total_objects = np.sum(inv_n[msk>0])
+    total_objects = np.sum(d[msk>0])
 
     print "total objects = ", total_objects
 
@@ -45,15 +51,15 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     print "shot noise = ", shot_noise
 
-    if d.shape != inv_n.shape :
+    if d.shape != d.shape :
         raise RuntimeError("data and noise have different dimensions")
 
     nside=hp.npix2nside(np.shape(d)[0])
 
 
     #write the noise map
-    n = np.zeros(np.shape(inv_n))
-    n[inv_n>0]  = 1./np.sqrt(inv_n[inv_n>0])
+    #n = np.zeros(np.shape(inv_n))
+    #n[inv_n>0]  = 1./np.sqrt(inv_n[inv_n>0])
 
     #load the beam file
     B_l_in = np.loadtxt(beam_file,delimiter=",")
