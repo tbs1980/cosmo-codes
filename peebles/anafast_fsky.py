@@ -30,7 +30,7 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     #create a mask file from inv_noise
     if inv_noise_file != None :
-        #inv_n = hp.read_map(inv_noise_file)
+        inv_n = hp.read_map(inv_noise_file)
         msk = get_mask_file(inv_n)
 
     #compute the useful area
@@ -39,11 +39,17 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     if inv_noise_file != None :
         useful_pixels = len(msk[msk>0])
 
-    fsky = useful_pixels/float(np.shape(msk)[0])
+    fsky = 1.
+
+    if inv_noise_file != None :
+        fsky = useful_pixels/float(np.shape(msk)[0])
 
     print "fsky =",fsky
 
-    total_objects = np.sum(d[msk>0])
+    total_objects = np.sum(d)
+
+    if inv_noise_file != None :
+        total_objects = np.sum(d[msk>0])
 
     print "total objects = ", total_objects
 
@@ -56,10 +62,6 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
 
     nside=hp.npix2nside(np.shape(d)[0])
 
-
-    #write the noise map
-    #n = np.zeros(np.shape(inv_n))
-    #n[inv_n>0]  = 1./np.sqrt(inv_n[inv_n>0])
 
     #load the beam file
     B_l_in = np.loadtxt(beam_file,delimiter=",")
