@@ -22,7 +22,7 @@ def get_mask_file(inv_noise_map):
 
     return mask
 
-def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
+def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps,counts=False):
     #write the data file
     d = hp.read_map(data_file)
 
@@ -54,6 +54,16 @@ def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps):
     print "total objects = ", total_objects
 
     shot_noise = 4*np.pi*fsky/total_objects
+
+    N_bar = total_objects/float(len(msk)) #all pixels are usefule
+
+    if inv_noise_file != None :
+        N_bar = total_objects/float(len(msk[msk>0])) #only some pixels are useful
+
+    # are the input maps counts rather than density?
+    if counts == True:
+        shot_noise*=(N_bar*N_bar)
+        print "N_bar = ",N_bar
 
     print "shot noise = ", shot_noise
 
