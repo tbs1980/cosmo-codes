@@ -23,12 +23,16 @@ def get_mask_file(inv_noise_map):
 def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps,apodize=False):
     #write the data file
     d = hp.read_map(data_file)
-    hp.write_map(spice_data,m=d)
+    #hp.write_map(spice_data,m=d)
 
     #create a mask file from inv_noise
     inv_n = hp.read_map(inv_noise_file)
     msk = get_mask_file(inv_n)
     hp.write_map(spice_mask,m=msk)
+    #multiply data with mask
+    d*=msk
+    #write the data file
+    hp.write_map(spice_data,m=d)
 
     if d.shape != inv_n.shape :
         raise RuntimeError("data and noise have different dimensions")
