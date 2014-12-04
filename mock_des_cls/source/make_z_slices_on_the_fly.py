@@ -108,7 +108,7 @@ def slice_on_the_fly(cat_file_name,nside,z_tics):
                 #print ""
 
     print "total invalis ",len(invalids)
-    for invlid in invalids:
+    for invalid in invalids:
         print invalid
 
 
