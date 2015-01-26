@@ -22,6 +22,78 @@ def get_mask_file(inv_noise_map):
 
     return mask
 
+
+def compute_pcl_estimate_with_weights(counts_file,weight_file,beam_file):
+    """
+    Compute the anafast/fsky power spectrum from counts map and mask
+
+    @param counts_file a healpix map with galaxy counts
+    @param mask_file a healpix map with w
+    """
+    #read the data file
+    d = hp.read_map(counts_file)
+
+    #read the weights file
+    weight = hp.read_map(weight_file)
+
+    if d.shape != weight.shape :
+        raise RuntimeError("data and weights have different dimensions")
+
+    #force all the values < 0 in weights to zero
+    weight[weight<0] = 0.
+
+    #compute the useful area
+    useful_pixels = len(weight[weight>0])
+
+    fsky = useful_pixels/float(np.shape(weight)[0])
+
+    print "fsky =",fsky
+
+    #now apply the mask
+    d *= weight
+
+    total_objects = np.sum(d[weight>0])
+    print "total objects = ", total_objects
+
+
+    N_bar = total_objects/float(useful_pixels) #only some pixels are useful
+    print "N_bar = ",N_bar
+
+    #make the data over-density
+    d = (d-N_bar)/N_bar
+
+    #make the values outside the mask to zero
+    d[weight <= 0] = 0.
+
+    shot_noise = 4*np.pi*fsky/total_objects
+    print "shot noise = ", shot_noise
+
+    nside=hp.npix2nside(np.shape(d)[0])
+
+    #load the beam file
+    B_l_in = np.loadtxt(beam_file,delimiter=",")
+    B_l = B_l_in[:,1]
+
+    #compute the powe spectrum of the data
+    D_l = hp.anafast(d,lmax=2*nside)
+    #apply the fksy correction
+    D_l /=fsky
+
+    #apply beam to the cls
+    D_l /= B_l**2
+
+    #compute the noise power spectrum
+    N_l = np.ones(np.shape(D_l))*shot_noise
+
+    #apply beam to the nls
+    N_l /= B_l**2
+
+    # subtract
+    S_l = D_l - N_l
+
+
+    return (D_l,N_l,S_l)
+
 def compute_pcl_estimate(data_file,inv_noise_file,beam_file,num_samps,counts=False):
     #write the data file
     d = hp.read_map(data_file)
