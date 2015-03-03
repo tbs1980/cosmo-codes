@@ -23,7 +23,7 @@ def get_mask_file(inv_noise_map):
     return mask
 
 
-def compute_pcl_estimate_with_weights(counts_file,weight_file,beam_file):
+def compute_pcl_estimate_with_weights(counts_file,weight_file,beam_file,invWeight=False):
     """
     Compute the anafast/fsky power spectrum from counts map and mask
 
@@ -50,6 +50,9 @@ def compute_pcl_estimate_with_weights(counts_file,weight_file,beam_file):
     print "fsky =",fsky
 
     #now apply the mask
+    if invWeight == True:
+    	weight[weight>0] = 1./weight[weight>0]
+    
     d *= weight
 
     total_objects = np.sum(d[weight>0])
