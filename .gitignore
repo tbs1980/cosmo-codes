@@ -63,3 +63,4 @@ mock_des_cls/splinter_output/*
 *.dat
 *.cl
 *.pcl
+*.tga
