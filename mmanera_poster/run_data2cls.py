@@ -2,9 +2,19 @@ import numpy as np
 import healpy as hp
 import sys
 import logging
+from subprocess import call
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+spice_exe='spice'
+spice_data='spice_data.fits'
+spice_noise='spice_noise.fits'
+spice_mask='spice_mask.fits'
+spice_dl='spice_dl.dat'
+spice_nl='spice_nl.dat'
+spice_bl='spice_bl.dat'
+spice_crr='spice_crr.dat'
 
 def ascii2map(asciiinpath,mask,z1,z2):
     """
@@ -49,15 +59,55 @@ def ascii2map(asciiinpath,mask,z1,z2):
     # return the data
     return data
 
-def data2Cl(data,mask):
+def data2ClWt(data,maskpath):
     """
     Compute the power spectrum of the data
     """
+    # get the correct nside
+    mask = hp.read_map(maskpath)
+    nside = (hp.npix2nside(len(mask)))
 
-def data2Wtheta(data,mask):
-    """
-    Compute the correlation function of the data
-    """
+    apodize = True
+
+    #compute the power spectrum of the mask
+    call([spice_exe,'-mapfile',maskpath,'-corfile',spice_crr])
+
+    #load the crr file
+    W_t_in = np.loadtxt(spice_crr,skiprows=1)
+    theta = W_t_in[:,0]
+    W_t = W_t_in[:,2]
+
+    if apodize :
+        logger.info("Computing the apodisation sigma")
+        ap_sigma = np.max(theta[np.log10(np.abs(W_t))>-2.5])*180./np.pi
+
+        if ap_sigma <= 0.:
+            raise RuntimeError("ap_sigma should be >0")
+
+        print "ap sigma = ",ap_sigma
+
+    # remove the correlation file
+    call(['rm',spice_crr])
+
+    #compute the powe spectrum of the data
+    logger.info("Computing the power spectrum")
+    if apodize :
+        call([spice_exe,'-mapfile',spice_data,'-maskfile',maskpath,'-clfile',
+            spice_dl,'-corfile',spice_crr,'-nlmax',str(2*nside),'-verbosity','NO',
+            '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
+    else:
+        call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
+            spice_dl,'-corfile',spice_crr,'-nlmax',str(2*nside),'-verbosity','NO'])
+
+
+    # read the power spectrum
+    D_l = np.loadtxt(spice_dl,skiprows=1)[:,1]
+
+    # read the correlation function
+    W_t = np.loadtxt(spice_crr,skiprows=1)
+
+    return (D_l,W_t)
+
 
 def run_data2cls(asciiinpath, z1, z2, maskpath, clpath, wthetapath):
     """
@@ -71,7 +121,14 @@ def run_data2cls(asciiinpath, z1, z2, maskpath, clpath, wthetapath):
     # read the ascii file and populate the pixels
     data = ascii2map(asciiinpath,mask, z1, z2)
 
-    cl = data2Cl(data,mask)
+    # write map to disc for spice
+    hp.write_map(spice_data,data)
+
+    # compute the power spectrum and correlation fucntion
+    cl,wt = data2ClWt(data,mask)
+
+    # delete stuff that are not required
+    call(['rm',spice_data])
 
 if __name__ == "__main__":
     if len(sys.argv) == 7:
