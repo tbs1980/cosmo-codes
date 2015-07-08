@@ -106,6 +106,10 @@ def data2ClWt(data,maskpath):
     # read the correlation function
     W_t = np.loadtxt(spice_crr,skiprows=1)
 
+    # delete files
+    call(['rm',spice_dl])
+    call(['rm',spice_crr])
+
     return (D_l,W_t)
 
 
@@ -125,7 +129,7 @@ def run_data2cls(asciiinpath, z1, z2, maskpath, clpath, wthetapath):
     hp.write_map(spice_data,data)
 
     # compute the power spectrum and correlation fucntion
-    cl,wt = data2ClWt(data,mask)
+    #cl,wt = data2ClWt(data,mask)
 
     # delete stuff that are not required
     call(['rm',spice_data])
