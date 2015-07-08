@@ -59,16 +59,19 @@ def ascii2map(asciiinpath,mask,z1,z2):
     # return the data
     return data
 
-def data2ClWt(data,maskpath):
+def data2ClWt(data,maskpath, clpath, wthetapath):
     """
     Compute the power spectrum of the data
     """
     # get the correct nside
+    logger.info("Reading the mask again for power spectrum  ")
     mask = hp.read_map(maskpath)
     nside = (hp.npix2nside(len(mask)))
+    logger.info("Setting nside =  "+str(nside))
 
     apodize = True
 
+    logger.info("Estimating apodiation sigma  ")
     #compute the power spectrum of the mask
     call([spice_exe,'-mapfile',maskpath,'-corfile',spice_crr])
 
@@ -93,24 +96,24 @@ def data2ClWt(data,maskpath):
     logger.info("Computing the power spectrum")
     if apodize :
         call([spice_exe,'-mapfile',spice_data,'-maskfile',maskpath,'-clfile',
-            spice_dl,'-corfile',spice_crr,'-nlmax',str(2*nside),'-verbosity','NO',
+            clpath,'-corfile',wthetapath,'-nlmax',str(2*nside),'-verbosity','NO',
             '-thetamax', str(ap_sigma+0.1), '-apodizesigma', str(ap_sigma)])
     else:
         call([spice_exe,'-mapfile',spice_data,'-maskfile',spice_mask,'-clfile',
-            spice_dl,'-corfile',spice_crr,'-nlmax',str(2*nside),'-verbosity','NO'])
+            clpath,'-corfile',wthetapath,'-nlmax',str(2*nside),'-verbosity','NO'])
 
 
     # read the power spectrum
-    D_l = np.loadtxt(spice_dl,skiprows=1)[:,1]
+    #D_l = np.loadtxt(spice_dl,skiprows=1)[:,1]
 
     # read the correlation function
-    W_t = np.loadtxt(spice_crr,skiprows=1)
+    #W_t = np.loadtxt(spice_crr,skiprows=1)
 
     # delete files
-    call(['rm',spice_dl])
-    call(['rm',spice_crr])
+    #call(['rm',spice_dl])
+    #call(['rm',spice_crr])
 
-    return (D_l,W_t)
+    #return (D_l,W_t)
 
 
 def run_data2cls(asciiinpath, z1, z2, maskpath, clpath, wthetapath):
@@ -129,7 +132,7 @@ def run_data2cls(asciiinpath, z1, z2, maskpath, clpath, wthetapath):
     hp.write_map(spice_data,data)
 
     # compute the power spectrum and correlation fucntion
-    #cl,wt = data2ClWt(data,mask)
+    data2ClWt(data,maskpath, clpath, wthetapath)
 
     # delete stuff that are not required
     call(['rm',spice_data])
