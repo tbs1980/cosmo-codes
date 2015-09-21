@@ -20,7 +20,7 @@ hpix_dict[4096]="pixel_window_n4096.fits"
 hpix_dict[8192]="pixel_window_n8192.fits"
 
 
-def make_window_func_file(hpix_data_dir,nside):
+def make_window_func_file(hpix_data_dir,nside,num_bins=1):
     filename=hpix_data_dir+hpix_dict[nside]
     w=hp.read_cl(filename)
     l=np.arange(2*nside+1)
@@ -28,17 +28,26 @@ def make_window_func_file(hpix_data_dir,nside):
     wl=w[0][0:2*nside+1]
     outfile=str(hpix_dict[nside])
     outfile=outfile.replace("fits","dat")
-    np.savetxt(outfile,np.asarray([l,wl]).T,delimiter=",",fmt="%d,%0.6e")
+    wind_func_profile = np.zeros([2*nside+1,num_bins+1])
+    wind_func_profile[:,0] = l
+    
+    format_str = '%d'  
+    for i in range(num_bins):
+        wind_func_profile[:,i+1] = wl
+        format_str += ',%0.6e'
+    
+    np.savetxt(outfile,wind_func_profile,delimiter=",",fmt=format_str)
 
 
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 4:
         hpix_data_dir=sys.argv[1]
         nside=int(sys.argv[2])
+        num_bins = int(sys.argv[3])
 
-        make_window_func_file(hpix_data_dir,nside)
+        make_window_func_file(hpix_data_dir,nside,num_bins)
     else:
-        print "usage: python ",sys.argv[0],"<healpix-data-dir> <nside>"
-        print "example: python",sys.argv[0], "/arxiv/libraries/source/Healpix_3.11/data 256"
+        print "usage: python ",sys.argv[0],"<healpix-data-dir> <nside> <num_bins>"
+        print "example: python",sys.argv[0], "/arxiv/libraries/source/Healpix_3.11/data/ 256 5"
